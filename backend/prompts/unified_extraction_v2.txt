@@ -1,0 +1,106 @@
+任务：从给定内容中提取竞赛基础信息、关键时间、作品/项目提交细则、评审与奖项、联系与平台信息，并据此计算比赛状态。
+
+要求（严格执行，不要虚构）：
+- 所有日期统一返回 ISO8601：YYYY-MM-DD 或 YYYY-MM-DDTHH:mm:ssZ；无法确定返回 null；仅有年月时用当月1日并在 notes 说明“精度降级”。
+- URL 必须为绝对地址；若输入提供 BASE_URL 且检测到相对地址，则进行补全；无法补全返回 null。
+- 优先从正文与时间轴中识别“报名开始/系统开放/通知发布”等最早日期作为 start_date；若正文未给出，则使用 publish_time 兜底为 start_date。
+- 比赛状态计算：当拥有 start_date 与 deadline 时，now < start → upcoming；start ≤ now ≤ deadline → ongoing；now > deadline → ended。缺 start_date 时用 publish_time 替代；仍缺则 status=null，并在 notes 说明。
+- 作品/项目详情需结构化提取（名称、赛道、组别、关键词、摘要、交付物、文件规则、提交方式、团队人数限制等），无法确定返回 null/[]，并在 notes 标注“未出现该字段”。
+- 严格返回 JSON，不要输出多余文本或 Markdown 代码块。
+
+输入：
+- SOURCE_TYPE: "html" | "pdf" | "text"
+- SOURCE_TEXT: 原文（必要）
+- BASE_URL: 用于补全相对链接（可选）
+- PUBLISH_META: 兜底的发布时间候选（可选，如 { meta_tags: {...}, http_date: "...", file_meta: {...}, uploaded_at: "..." }）
+
+输出（严格 JSON）：
+{
+  "contest": {
+    "name": "string|null",
+    "organizer": "string|null",
+    "category": "string|null",
+    "default_url": "string|null",
+    "entrant_url": "string|null",
+    "teacher_url": "string|null",
+    "platforms": {
+      "registration_system": "string|null",
+      "announcement_page": "string|null",
+      "faq_page": "string|null"
+    }
+  },
+  "dates": {
+    "publish_time": "YYYY-MM-DDTHH:mm:ssZ|null",
+    "start_date": "YYYY-MM-DD|null",
+    "deadline": "YYYY-MM-DD|null",
+    "submission_window": {
+      "start": "YYYY-MM-DD|null",
+      "end": "YYYY-MM-DD|null"
+    },
+    "timeline": [
+      {
+        "name": "string",
+        "start": "YYYY-MM-DD|null",
+        "deadline": "YYYY-MM-DD|null",
+        "description": "string|null"
+      }
+    ]
+  },
+  "submission": {
+    "work_title": "string|null",
+    "track": "string|null",
+    "group": "string|null",
+    "keywords": ["string"],
+    "abstract": "string|null",
+    "deliverables": [
+      { "type": "string", "description": "string|null" }
+    ],
+    "file_rules": {
+      "formats": ["string"],
+      "max_size_mb": "number|null",
+      "pages_limit": "number|null",
+      "naming_rule": "string|null"
+    },
+    "submission_method": {
+      "url": "string|null",
+      "system_name": "string|null",
+      "requires_registration": true
+    },
+    "team_limits": {
+      "min_members": "number|null",
+      "max_members": "number|null"
+    }
+  },
+  "requirements": {
+    "eligibility": ["string"],
+    "technical": ["string"],
+    "compliance": ["string"]
+  },
+  "evaluation": {
+    "criteria": ["string"],
+    "scoring_rules": ["string"],
+    "prize_info": "string|null"
+  },
+  "contact": {
+    "contact_info": "string|null"
+  },
+  "computed": {
+    "status": "upcoming|ongoing|ended|null",
+    "confidence": 0.0,
+    "notes": "string"
+  }
+}
+
+判定与兜底：
+1) URL 规范化：相对地址在提供 BASE_URL 时补全为绝对 URL；无法补全则为 null；若仅识别出单一官网入口，则用于补齐 default_url/entrant_url/teacher_url，并在 notes 记录“统一入口”。
+2) 日期：优先正文/时间轴；正文缺失 start_date 使用 publish_time 兜底；publish_time 兜底顺序建议：正文显式发布时间 > meta/JSON-LD（article:published_time 等）> 页面时间戳 > HTTP Date > 文件/资源 metadata > uploaded_at。
+3) 状态：当拥有 start_date 与 deadline 时计算；缺 start_date 用 publish_time 替代；仍缺则 status=null 并记录原因。
+4) 作品/项目详情：从正文结构化提取，未知则 null/[] 并在 notes 说明。
+5) 严格 JSON 输出。
+
+版本：v2
+最后更新：2025-10-11
+变更日志：
+- v2: 新增 start_date/publish_time 兜底与 computed.status；扩展作品/项目详情字段。
+
+

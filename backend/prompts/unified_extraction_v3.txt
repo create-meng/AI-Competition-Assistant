@@ -1,0 +1,99 @@
+任务：在"尽量完整且不杜撰"的前提下，从输入文本中提取竞赛全景信息；对日期、URL进行严格规范化；当信息缺失时返回 null/[] 并在 notes 中说明原因；返回严格 JSON（无多余文本、无Markdown、无思考过程）。
+
+输入：
+- SOURCE_TYPE: "html" | "pdf" | "text"
+- SOURCE_TEXT: 原文（必要）
+- BASE_URL: 用于补全相对链接（可选）
+- PUBLISH_META: 兜底发布时间候选（可选，如 { meta_tags: {...}, http_date: "...", file_meta: {...}, uploaded_at: "..." })
+
+严格约束（必须遵守）：
+1) 不要杜撰。找不到就返回 null 或 []，并在 computed.notes 添加“未出现该字段”。
+2) 日期：统一 ISO8601。
+   - 日期（无时间）：YYYY-MM-DD。
+   - 含时间：YYYY-MM-DDTHH:mm:ssZ（如能确定时区，否则忽略时区，仅返回日期）。
+   - 仅有“YYYY-MM”或“YYYY”：降级为当月/当年第一日（YYYY-MM-01 / YYYY-01-01），并在 notes 说明“精度降级”。
+3) URL：必须为绝对 URL；如检测到相对URL且提供 BASE_URL，则补全；无法补全返回 null。
+   - 若只识别出单一官网入口，则用于补齐 default_url/entrant_url/teacher_url，并在 notes 标注“统一入口”。
+4) 状态计算：当拥有 start_date 与 deadline 时：
+   - now < start_date → upcoming
+   - start_date ≤ now ≤ deadline → ongoing
+   - now > deadline → ended
+   缺 start_date 时用 publish_time 兜底；仍缺则 status=null，并在 notes 说明。
+5) 作品/项目与规则：结构化输出；未知则 null/[]；避免将无关描述当成规则。
+6) 输出"严格 JSON"，不要输出任何解释、代码块、Markdown、思考过程或额外文本。直接返回JSON对象，不要包含任何前缀或后缀。
+
+建议流程（不输出到结果）：
+- 先从正文与时间轴识别关键时间，再结合 PUBLISH_META 兜底 publish_time 与 start_date。
+- 解析正文结构（段落、小标题、列表、表格文本），提炼 submission、requirements、evaluation。
+- 正则与规则优先，语义判断仅用于补充；冲突时保留更确定的规则结果。
+
+输出（严格 JSON）：
+{
+  "contest": {
+    "name": "string|null",
+    "organizer": "string|null",
+    "category": "string|null",
+    "default_url": "string|null",
+    "entrant_url": "string|null",
+    "teacher_url": "string|null",
+    "platforms": {
+      "registration_system": "string|null",
+      "announcement_page": "string|null",
+      "faq_page": "string|null"
+    }
+  },
+  "dates": {
+    "publish_time": "YYYY-MM-DDTHH:mm:ssZ|null",
+    "start_date": "YYYY-MM-DD|null",
+    "deadline": "YYYY-MM-DD|null",
+    "submission_window": { "start": "YYYY-MM-DD|null", "end": "YYYY-MM-DD|null" },
+    "timeline": [ { "name": "string", "start": "YYYY-MM-DD|null", "deadline": "YYYY-MM-DD|null", "description": "string|null" } ]
+  },
+  "submission": {
+    "work_title": "string|null",
+    "track": "string|null",
+    "group": "string|null",
+    "keywords": ["string"],
+    "abstract": "string|null",
+    "deliverables": [ { "type": "string", "description": "string|null" } ],
+    "file_rules": { "formats": ["string"], "max_size_mb": "number|null", "pages_limit": "number|null", "naming_rule": "string|null" },
+    "submission_method": { "url": "string|null", "system_name": "string|null", "requires_registration": true },
+    "team_limits": { "min_members": "number|null", "max_members": "number|null" }
+  },
+  "requirements": {
+    "eligibility": ["string"],
+    "technical": ["string"],
+    "compliance": ["string"]
+  },
+  "evaluation": {
+    "criteria": ["string"],
+    "scoring_rules": ["string"],
+    "prize_info": "string|null"
+  },
+  "contact": { "contact_info": "string|null" },
+  "computed": {
+    "status": "upcoming|ongoing|ended|null",
+    "confidence": 0.0,
+    "notes": "string"
+  }
+}
+
+判定与兜底：
+1) URL：相对URL在 BASE_URL 存在时补全；若仅识别出单一官网入口，统一回填 default_url/entrant_url/teacher_url；联系人中的URL不得用于官网推断。
+2) 日期：正文优先；start_date 不可得→使用 publish_time 兜底；publish_time 获取顺序建议：正文显式发布时间 > meta/JSON-LD（如 article:published_time）> 页面可见时间戳 > HTTP Date > 文件/资源元数据 > uploaded_at。
+3) 状态：仅在可计算时给出；否则 status=null 并在 notes 说明“缺少起始或截止日期”。
+4) 不确定信息一律置 null 并在 notes 标注原因；避免模糊词汇（如“可能”、“大约”）。
+
+版本：v3.1
+最后更新：2025-10-11
+变更日志：
+- v3.1: 强化JSON格式要求，禁止输出思考过程
+- v3: 收紧日期/URL约束；强化兜底与不杜撰；扩展 submission 结构；明确单一入口回填规则。
+
+重要提醒：
+- 必须直接返回JSON对象，不要包含任何思考过程、解释或额外文本
+- 不要使用 <think>、<thinking> 等标签
+- 不要输出"让我分析一下"、"根据内容"等前缀
+- 直接以 { 开始，以 } 结束
+
+

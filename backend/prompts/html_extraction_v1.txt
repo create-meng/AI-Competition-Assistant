@@ -1,0 +1,31 @@
+任务：从网页或文档内容中提取竞赛相关的关键信息
+
+要求：
+- 提取参赛者入口URL（entrant_url）：识别包含"报名"、"参赛"、"注册"、"提交作品"、"student"、"entrance"、"register"等关键词的链接
+- 提取指导老师入口URL（teacher_url）：识别包含"教师"、"指导"、"老师"、"导师"、"teacher"、"mentor"、"advisor"等关键词的链接
+- 提取报名截止日期（deadline）：识别日期格式，尽量返回 YYYY-MM-DD 格式
+- 提取参赛要求（requirements）：列表形式
+- 提取联系方式（contact_info）：邮箱、电话等
+- 提取奖项信息（prize_info）：奖金、奖品等
+- 只返回有效的完整URL（包含协议和域名），找不到返回 null
+- 不要虚构信息，不确定的字段返回 null
+- 评估提取结果的置信度（confidence），范围 0.0-1.0
+
+输出格式（严格 JSON）：
+{
+  "entrant_url": "完整URL 或 null",
+  "teacher_url": "完整URL 或 null",
+  "deadline": "YYYY-MM-DD 或 null",
+  "requirements": ["要求1", "要求2"] 或 [],
+  "contact_info": "联系方式 或 null",
+  "prize_info": "奖项信息 或 null",
+  "confidence": 0.0-1.0,
+  "notes": "可选备注"
+}
+
+示例：
+输入：<a href="/student/register">学生报名入口</a>
+输出：{"entrant_url": "https://example.com/student/register", "teacher_url": null, "deadline": null, "requirements": [], "contact_info": null, "prize_info": null, "confidence": 0.7, "notes": "只找到了学生入口"}
+
+版本：v1
+最后更新：2025-10-06

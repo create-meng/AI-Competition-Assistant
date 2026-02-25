@@ -1,0 +1,34 @@
+任务：从 PDF 文本中提取关键竞赛信息
+
+要求：
+- 提取报名截止日期（deadline），尽量返回 ISO8601 格式（YYYY-MM-DD）
+- 提取报名要求（requirements）列表
+- 提取参赛者入口（entrant_url）
+- 提取指导老师入口（teacher_url）
+- 提取奖项信息（prize_info）
+- 提取联系方式（contact_info）
+- 保留原始文本片段（raw_snippet）
+- 找不到的字段返回 null
+- 不要虚构信息
+
+输入：
+<<PDF_TEXT>>
+
+输出（严格 JSON）：
+{
+  "deadline": "YYYY-MM-DD 或 null",
+  "requirements": ["要求1", "要求2"] 或 [],
+  "entrant_url": "完整URL 或 null",
+  "teacher_url": "完整URL 或 null",
+  "prize_info": "奖项描述 或 null",
+  "contact_info": "联系方式 或 null",
+  "raw_snippet": "原始文本片段",
+  "confidence": 0.0-1.0,
+  "notes": "可选备注"
+}
+
+版本：v1
+最后更新：2025-10-06
+变更日志：
+- v1: 初始版本
+
