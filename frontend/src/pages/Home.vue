@@ -1,32 +1,12 @@
 <template>
-  <div class="home-container">
+  <AppLayout title="AI竞赛助手" :subtitle="user?.username ? `欢迎回来，${user?.username}` : ''">
     <!-- 顶部导航栏 -->
-    <header class="header">
-        <div class="header-content">
-        <div class="logo">
-          <div class="logo-icon">🎯</div>
-          <h1 class="logo-text">AI竞赛助手</h1>
-        </div>
-          <div class="user-info">
-          <div class="user-badge" :class="userRole">
-            <span class="badge-icon">{{ userRole === 'teacher' ? '👨‍🏫' : '🎓' }}</span>
-            <span class="badge-text">{{ userRole === 'teacher' ? '指导老师' : '参赛者' }}</span>
-          </div>
-          <div class="user-name">{{ user?.username }}</div>
-          <button @click="handleLogout" class="logout-btn">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-              <polyline points="16 17 21 12 16 7"></polyline>
-              <line x1="21" y1="12" x2="9" y2="12"></line>
-            </svg>
-            退出
-          </button>
-        </div>
-        </div>
-    </header>
+    <template #right>
+      <HeaderUserInfo />
+    </template>
 
     <!-- 主内容区 -->
-    <main class="main-content">
+    <div class="main-content">
       <!-- 欢迎横幅 -->
       <section class="hero-section">
         <div class="hero-content">
@@ -122,14 +102,14 @@
       <section class="quick-actions">
         <h3 class="section-title">快速操作</h3>
         <div class="actions-grid">
-          <button @click="$router.push('/contests')" class="action-btn primary">
+          <button @click="$router.push('/contests')" class="ui-btn ui-btn-primary ui-btn-lg">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 11l3 3L22 4"></path>
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
             </svg>
             浏览竞赛
           </button>
-          <button @click="$router.push('/ai-extract')" class="action-btn secondary">
+          <button @click="$router.push('/ai-extract')" class="ui-btn ui-btn-secondary ui-btn-lg">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="7 10 12 15 17 10"></polyline>
@@ -139,34 +119,26 @@
           </button>
         </div>
       </section>
-    </main>
-  </div>
+    </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { ElMessage } from 'element-plus'
 import { contestAPI, aiAPI } from '@/api'
+import AppLayout from '@/components/AppLayout.vue'
+import HeaderUserInfo from '@/components/HeaderUserInfo.vue'
 
-const router = useRouter()
 const userStore = useUserStore()
 
 const user = computed(() => userStore.user)
-const userRole = computed(() => userStore.userRole)
 
 const stats = ref({
   contests: 0,
   ongoing: 0,
   extractions: 0
 })
-
-const handleLogout = () => {
-  userStore.logout()
-  ElMessage.success('已退出登录')
-  router.push('/login')
-}
 
 const loadStats = async () => {
   try {
@@ -196,118 +168,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.home-container {
-  min-height: 100vh;
-  background: var(--bg-secondary);
-}
-
-/* 顶部导航栏 */
-.header {
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  background: var(--bg-glass);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid var(--border-color);
-  box-shadow: var(--shadow-sm);
-}
-
-.header-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--spacing-4) var(--spacing-6);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.logo {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-3);
-}
-
-.logo-icon {
-  font-size: 28px;
-}
-
-.logo-text {
-  font-size: var(--text-xl);
-  font-weight: var(--font-bold);
-  background: var(--gradient-text);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-4);
-}
-
-.user-badge {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
-  border-radius: var(--radius-full);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-}
-
-.user-badge.teacher {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning-dark);
-  border: 1px solid var(--warning-light);
-}
-
-.user-badge.entrant {
-  background: rgba(16, 185, 129, 0.1);
-  color: var(--success-dark);
-  border: 1px solid var(--success-light);
-}
-
-.badge-icon {
-  font-size: 16px;
-}
-
-.user-name {
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  color: var(--text-secondary);
-}
-
-.logout-btn {
-  display: flex;
-  align-items: center;
-  gap: var(--spacing-2);
-  padding: var(--spacing-2) var(--spacing-4);
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  color: var(--text-secondary);
-  font-size: var(--text-sm);
-  font-weight: var(--font-medium);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.logout-btn:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--danger-color);
-  color: var(--danger-color);
-}
-
-/* 主内容区 */
 .main-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: var(--spacing-8) var(--spacing-6);
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-12);
+  gap: var(--spacing-8);
 }
 
 /* 欢迎横幅 */
@@ -588,12 +452,7 @@ onMounted(() => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .header-content {
-    padding: var(--spacing-3) var(--spacing-4);
-  }
-
   .main-content {
-    padding: var(--spacing-6) var(--spacing-4);
     gap: var(--spacing-8);
   }
 

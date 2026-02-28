@@ -31,21 +31,36 @@ Content-Type: application/json
       "name": "Cloudflare Workers AI",
       "capabilities": ["text_only"],
       "requires": ["api_key", "account_id"],
-      "default_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+      "default_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+      "status": "available",
+      "reason": "",
+      "available_models": ["@cf/meta/llama-3.3-70b-instruct-fp8-fast"],
+      "last_check": "2025-10-06T12:00:00Z",
+      "response_time": 0.32
     },
     {
       "type": "google",
       "name": "Google Gemini",
       "capabilities": ["text_only", "file_upload", "image_reading", "web_reading"],
       "requires": ["api_key"],
-      "default_model": "gemini-1.5-flash"
+      "default_model": "gemini-1.5-flash",
+      "status": "available",
+      "reason": "",
+      "available_models": ["gemini-1.5-flash"],
+      "last_check": "2025-10-06T12:00:00Z",
+      "response_time": 0.41
     },
     {
       "type": "doubao",
       "name": "豆包 AI",
       "capabilities": ["text_only", "web_reading"],
       "requires": ["api_key"],
-      "default_model": "doubao-pro-32k"
+      "default_model": "doubao-pro-32k",
+      "status": "unknown",
+      "reason": "",
+      "available_models": ["doubao-pro-32k"],
+      "last_check": "",
+      "response_time": 0
     }
   ]
 }
@@ -85,7 +100,7 @@ Authorization: Bearer <token>
   "status": "success",
   "code": 200,
   "message": "任务已启动",
-  "data": { "job_id": "652e2..." }
+  "data": { "job_id": "123" }
 }
 ```
 
@@ -102,7 +117,7 @@ Authorization: Bearer <token>
   "code": 200,
   "message": "获取成功",
   "data": {
-    "_id": "652e2...",
+    "_id": "123",
     "type": "ai_extraction",
     "status": "running|completed|failed|pending",
     "steps": [
@@ -112,7 +127,7 @@ Authorization: Bearer <token>
       { "name": "save", "status": "pending", "detail": "" }
     ],
     "result": {
-      "extraction_id": "507f1f77bcf86cd799439011",
+      "extraction_id": "456",
       "provider": "google",
       "model": "gemini-1.5-flash",
       "confidence": 0.82
@@ -132,20 +147,21 @@ Authorization: Bearer <token>
 
 | 参数 | 类型 | 必填 | 说明 |
 |------|------|------|------|
-| provider | string | 是 | AI提供商类型: `cloudflare`/`google`/`doubao` |
-| source_type | string | 是 | 来源类型: `url`/`file`/`text` |
-| source_content | string | 条件 | URL或文本内容（source_type为url或text时必填） |
-| file_id | string | 条件 | 文件ID（source_type为file时必填） |
+| provider | string | 否 | AI提供商类型: `cloudflare`/`google`/`doubao`/`free_qwq`（未填则后端默认） |
+| source_url | string | 否 | 网页 URL（可选） |
+| source_text | string | 否 | 纯文本内容（可选） |
+| file_id | string | 否 | 文件ID（可选） |
+| source_content | string | 否 | 兼容旧字段：可填 URL 或文本（可选） |
 | model | string | 否 | 模型名称（可选，使用默认模型） |
-| prompt_template | string | 否 | Prompt模板名称，默认为`html_extraction_v1` |
+| prompt_template | string | 否 | Prompt模板名称，默认为 `unified_extraction_v4` |
+| source_type | string | 否 | 兼容字段：来源类型（默认 `mixed`，一般无需传） |
 
 **请求示例1 - 从URL提取**:
 ```json
 {
   "provider": "google",
-  "source_type": "url",
-  "source_content": "https://example.com/contest",
-  "prompt_template": "html_extraction_v1"
+  "source_url": "https://example.com/contest",
+  "prompt_template": "unified_extraction_v4"
 }
 ```
 
@@ -153,8 +169,7 @@ Authorization: Bearer <token>
 ```json
 {
   "provider": "cloudflare",
-  "source_type": "file",
-  "file_id": "507f1f77bcf86cd799439011"
+  "file_id": "789"
 }
 ```
 
@@ -162,8 +177,7 @@ Authorization: Bearer <token>
 ```json
 {
   "provider": "doubao",
-  "source_type": "text",
-  "source_content": "2025年全国大学生计算机设计大赛\n报名入口：https://..."
+  "source_text": "2025年全国大学生计算机设计大赛\n报名入口：https://..."
 }
 ```
 
@@ -174,7 +188,7 @@ Authorization: Bearer <token>
   "code": 200,
   "message": "提取成功",
   "data": {
-    "extraction_id": "507f1f77bcf86cd799439011",
+    "extraction_id": "456",
     "extracted_json": {
       "entrant_url": "https://example.com/student/register",
       "teacher_url": "https://example.com/teacher/login",
@@ -185,16 +199,15 @@ Authorization: Bearer <token>
       ],
       "contact_info": "contact@example.com",
       "prize_info": "一等奖10000元，二等奖5000元",
-      "confidence": 0.85,
       "notes": ""
     },
     "raw_response": "AI的原始返回内容...",
-    "provider": "Google Gemini",
+    "provider": "google",
     "model": "gemini-1.5-flash",
     "confidence": 0.85,
     "source_url": "https://example.com/contest",
     "source_doc_id": null,
-    "source_type": "url",
+    "source_type": "mixed",
     "extraction_time": "2025-10-06T12:00:00.000Z",
     "status": "success"
   }
@@ -264,7 +277,7 @@ Authorization: Bearer <token>
 ```
 
 **路径参数**:
-- `extraction_id`: 提取记录的MongoDB ObjectId
+- `extraction_id`: 提取记录ID（SQLite 自增整数）
 
 **成功响应**:
 ```json
@@ -273,7 +286,7 @@ Authorization: Bearer <token>
   "code": 200,
   "message": "获取成功",
   "data": {
-    "_id": "507f1f77bcf86cd799439011",
+    "_id": "456",
     "source_url": "https://example.com/contest",
     "source_doc_id": null,
     "source_type": "url",
@@ -284,7 +297,7 @@ Authorization: Bearer <token>
       "confidence": 0.85
     },
     "model": "gemini-1.5-flash",
-    "provider": "Google Gemini",
+    "provider": "google",
     "prompt_id": "html_extraction_v1",
     "extraction_time": "2025-10-06T12:00:00.000Z",
     "raw_response": "...",
@@ -344,12 +357,11 @@ curl -X POST http://localhost:8000/api/v1/ai/extract \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -d '{
     "provider": "google",
-    "source_type": "url",
-    "source_content": "https://example.com/contest"
+    "source_url": "https://example.com/contest"
   }'
 
 # 3. 查看提取结果
-curl -X GET http://localhost:8000/api/v1/ai/extractions/507f1f77bcf86cd799439011 \
+curl -X GET http://localhost:8000/api/v1/ai/extractions/456 \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

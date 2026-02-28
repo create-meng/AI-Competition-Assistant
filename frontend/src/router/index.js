@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import { ElMessage } from 'element-plus'
 
 const routes = [
   {
@@ -25,14 +26,12 @@ const routes = [
   {
     path: '/contests',
     name: 'Contests',
-    component: () => import('@/pages/Contests.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('@/pages/Contests.vue')
   },
   {
     path: '/contests/:id',
     name: 'ContestDetail',
-    component: () => import('@/pages/ContestDetail.vue'),
-    meta: { requiresAuth: true }
+    component: () => import('@/pages/ContestDetail.vue')
   },
   {
     path: '/ai-extract',
@@ -52,10 +51,27 @@ router.beforeEach((to, from, next) => {
   const userStore = useUserStore()
   
   if (to.meta.requiresAuth && !userStore.isLoggedIn) {
-    next('/login')
-  } else {
-    next()
+    ElMessage.warning('请先登录后继续')
+    next({
+      path: '/login',
+      query: {
+        redirect: to.fullPath
+      }
+    })
+    return
   }
+
+  if ((to.path === '/login' || to.path === '/register') && userStore.isLoggedIn) {
+    const redirect = typeof to.query?.redirect === 'string' ? to.query.redirect : ''
+    if (redirect && redirect.startsWith('/') && redirect !== '/login' && redirect !== '/register') {
+      next(redirect)
+      return
+    }
+    next('/home')
+    return
+  }
+
+  next()
 })
 
 export default router

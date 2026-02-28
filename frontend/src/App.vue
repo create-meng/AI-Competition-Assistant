@@ -9,6 +9,7 @@
 
 <style>
 @import './styles/colors.css';
+@import './styles/ui.css';
 
 #app {
   min-height: 100vh;

@@ -143,7 +143,7 @@ ai_competition_assistant/
 │   │   ├── api/              # API 封装
 │   │   ├── components/       # 组件
 │   │   ├── store/            # Pinia 状态管理
-│   │   └── views/            # 页面
+│   │   └── pages/            # 页面
 │   └── package.json
 └── README.md
 ```

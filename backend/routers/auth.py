@@ -2,14 +2,15 @@
 认证路由 - 注册、登录
 完全重构版本
 """
-from fastapi import APIRouter, HTTPException, status, Depends, Request
+from fastapi import APIRouter, HTTPException, status, Request
 from datetime import datetime, timezone
 # from bson import ObjectId  # MongoDB 专用，SQLite 不需要
 
 from models.user import UserCreate, UserLogin, Token, UserResponse
-from utils.security import get_password_hash, verify_password, create_access_token, get_current_user
+from utils.security import get_password_hash, verify_password, create_access_token
 from utils.rate_limiter import check_rate_limit
 from utils.logger import logger
+from utils.response import success, error
 from database import get_database
 
 router = APIRouter()
@@ -27,25 +28,21 @@ async def register(user: UserCreate, request: Request):
     
     try:
         db = get_database()
+        if db is None:
+            error("数据库未就绪，请稍后重试", code=503)
         
         # 检查用户名是否已存在
         existing_user = await db.users.find_one({"username": user.username})
         if existing_user:
             logger.auth_event("register", user.username, False, client_ip, "用户名已存在")
-            raise HTTPException(
-                status_code=400,
-                detail="用户名已存在"
-            )
+            error("用户名已存在", code=400)
         
         # 检查邮箱是否已存在
         if user.email:
             existing_email = await db.users.find_one({"email": user.email})
             if existing_email:
                 logger.auth_event("register", user.username, False, client_ip, "邮箱已被注册")
-                raise HTTPException(
-                    status_code=400,
-                    detail="邮箱已被注册"
-                )
+                error("邮箱已被注册", code=400)
         
         # 创建用户
         user_dict = user.dict(exclude={"password"})
@@ -68,22 +65,13 @@ async def register(user: UserCreate, request: Request):
         created_user.pop("hashed_password", None)
         
         logger.auth_event("register", user.username, True, client_ip)
-        
-        return {
-            "status": "success",
-            "code": 200,
-            "message": "注册成功",
-            "data": created_user
-        }
+        return success(created_user, message="注册成功")
         
     except HTTPException as he:
         raise he
     except Exception as e:
         logger.error(f"注册错误: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"注册失败: {str(e)}"
-        )
+        error(f"注册失败: {str(e)}", code=500)
 
 
 @router.post("/login")
@@ -98,23 +86,19 @@ async def login(credentials: UserLogin, request: Request):
     
     try:
         db = get_database()
+        if db is None:
+            error("数据库未就绪，请稍后重试", code=503)
         
         # 查找用户
         user = await db.users.find_one({"username": credentials.username})
         if not user:
             logger.auth_event("login", credentials.username, False, client_ip, "用户名不存在")
-            raise HTTPException(
-                status_code=401,
-                detail="用户名不存在，请先注册"
-            )
+            error("用户名不存在，请先注册", code=401)
         
         # 验证密码
         if not verify_password(credentials.password, user["hashed_password"]):
             logger.auth_event("login", credentials.username, False, client_ip, "密码错误")
-            raise HTTPException(
-                status_code=401,
-                detail="密码错误，请重新输入"
-            )
+            error("密码错误，请重新输入", code=401)
         
         # 更新最后登录时间
         await db.users.update_one(
@@ -136,63 +120,17 @@ async def login(credentials: UserLogin, request: Request):
         user.pop("hashed_password", None)
         
         logger.auth_event("login", credentials.username, True, client_ip)
-        
-        return {
-            "status": "success",
-            "code": 200,
-            "message": "登录成功",
-            "data": {
+        return success(
+            {
                 "access_token": access_token,
                 "token_type": "bearer",
-                "user": user
-            }
-        }
+                "user": user,
+            },
+            message="登录成功",
+        )
         
     except HTTPException as he:
         raise he
     except Exception as e:
         logger.error(f"登录错误: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"登录失败: {str(e)}"
-        )
-
-
-@router.get("/me")
-async def get_current_user_info(request: Request, current_user: dict = Depends(get_current_user)):
-    """获取当前用户信息"""
-    try:
-        db = get_database()
-        
-        # SQLite 使用整数 ID
-        user_id = current_user["user_id"]
-        try:
-            user_id = int(user_id)
-        except (ValueError, TypeError):
-            pass
-        
-        user = await db.users.find_one({"_id": user_id})
-        if not user:
-            raise HTTPException(
-                status_code=404,
-                detail="用户不存在"
-            )
-        
-        user["id"] = str(user.pop("_id"))
-        user.pop("hashed_password", None)
-        
-        return {
-            "status": "success",
-            "code": 200,
-            "message": "获取成功",
-            "data": user
-        }
-        
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        logger.error(f"获取用户信息错误: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"获取失败: {str(e)}"
-        )
+        error(f"登录失败: {str(e)}", code=500)

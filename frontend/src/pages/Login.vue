@@ -1,155 +1,161 @@
 <template>
-  <div class="login-container">
-    <div class="login-wrapper">
-      <!-- 左侧品牌区域 -->
-      <div class="brand-section">
-        <div class="brand-content">
-          <div class="brand-logo">
-            <div class="logo-icon">🎯</div>
-            <h1 class="brand-title">AI竞赛助手</h1>
-          </div>
-          <p class="brand-subtitle">智能竞赛信息提取与管理平台</p>
-          <div class="brand-features">
-            <div class="feature-item">
-              <div class="feature-icon">🤖</div>
-              <span>AI智能提取</span>
+  <AppLayout :showHeader="false" :container="false" :padded="false">
+    <div class="login-container">
+      <div class="login-wrapper">
+        <!-- 左侧品牌区域 -->
+        <div class="brand-section">
+          <div class="brand-content">
+            <div class="brand-logo">
+              <div class="logo-icon">🎯</div>
+              <h1 class="brand-title">AI竞赛助手</h1>
             </div>
-            <div class="feature-item">
-              <div class="feature-icon">🎯</div>
-              <span>角色智能跳转</span>
-            </div>
-            <div class="feature-item">
-              <div class="feature-icon">📊</div>
-              <span>知识图谱可视化</span>
+            <p class="brand-subtitle">智能竞赛信息提取与管理平台</p>
+            <div class="brand-features">
+              <div class="feature-item">
+                <div class="feature-icon">🤖</div>
+                <span>AI智能提取</span>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">🎯</div>
+                <span>角色智能跳转</span>
+              </div>
+              <div class="feature-item">
+                <div class="feature-icon">📊</div>
+                <span>知识图谱可视化</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 右侧登录表单 -->
-      <div class="form-section">
-        <div class="form-container">
-          <div class="form-header">
-            <h2 class="form-title">欢迎回来</h2>
-            <p class="form-subtitle">登录您的账户以继续使用</p>
-          </div>
-
-          <!-- 错误提示 -->
-          <div v-if="errorMessage" class="error-alert">
-            <div class="error-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="10"></circle>
-                <line x1="15" y1="9" x2="9" y2="15"></line>
-                <line x1="9" y1="9" x2="15" y2="15"></line>
-              </svg>
+        <!-- 右侧登录表单 -->
+        <div class="form-section">
+          <div class="form-container">
+            <div class="form-header">
+              <h2 class="form-title">欢迎回来</h2>
+              <p class="form-subtitle">登录您的账户以继续使用</p>
             </div>
-            <div class="error-content">
-              <div class="error-title">登录失败</div>
-              <div class="error-message">{{ errorMessage }}</div>
-            </div>
-            <button class="error-close" @click="clearError">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-              </svg>
-            </button>
-          </div>
 
-          <!-- 成功提示 -->
-          <div v-if="successMessage" class="success-alert">
-            <div class="success-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                <polyline points="22 4 12 14.01 9 11.01"></polyline>
-              </svg>
-            </div>
-            <div class="success-message">{{ successMessage }}</div>
-          </div>
-
-          <!-- 登录表单 -->
-          <form @submit.prevent="handleLogin" class="login-form">
-            <div class="form-group">
-              <label class="form-label">用户名</label>
-              <div class="input-wrapper">
-                <div class="input-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
-                </div>
-                <input
-                  v-model="form.username"
-                  type="text"
-                  placeholder="请输入用户名"
-                  required
-                  class="form-input"
-                  :class="{ 'input-error': fieldErrors.username }"
-                  name="username"
-                  autocomplete="username"
-                />
+            <!-- 错误提示 -->
+            <div v-if="errorMessage" class="error-alert">
+              <div class="error-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <line x1="15" y1="9" x2="9" y2="15"></line>
+                  <line x1="9" y1="9" x2="15" y2="15"></line>
+                </svg>
               </div>
-              <span v-if="fieldErrors.username" class="field-error">{{ fieldErrors.username }}</span>
-            </div>
-
-            <div class="form-group">
-              <label class="form-label">密码</label>
-              <div class="input-wrapper">
-                <div class="input-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                    <circle cx="12" cy="16" r="1"></circle>
-                    <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                  </svg>
-                </div>
-                <input
-                  v-model="form.password"
-                  type="password"
-                  placeholder="请输入密码"
-                  required
-                  class="form-input"
-                  :class="{ 'input-error': fieldErrors.password }"
-                  name="password"
-                  autocomplete="current-password"
-                />
+              <div class="error-content">
+                <div class="error-title">登录失败</div>
+                <div class="error-message">{{ errorMessage }}</div>
               </div>
-              <span v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</span>
+              <button class="error-close" @click="clearError">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
             </div>
 
-            <button
-              type="submit"
-              :disabled="loading"
-              class="login-btn"
-            >
-              <span v-if="!loading">登录</span>
-              <span v-else class="loading-content">
-                <div class="loading-spinner"></div>
-                登录中...
-              </span>
-            </button>
-          </form>
+            <!-- 成功提示 -->
+            <div v-if="successMessage" class="success-alert">
+              <div class="success-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+              <div class="success-message">{{ successMessage }}</div>
+            </div>
 
-          <!-- 底部链接 -->
-          <div class="form-footer">
-            <span class="footer-text">还没有账号？</span>
-            <router-link to="/register" class="footer-link">立即注册</router-link>
+            <!-- 登录表单 -->
+            <form @submit.prevent="handleLogin" class="login-form">
+              <div class="form-group">
+                <label class="form-label">用户名</label>
+                <div class="input-wrapper">
+                  <div class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                  <input
+                    v-model="form.username"
+                    type="text"
+                    placeholder="请输入用户名"
+                    required
+                    class="form-input"
+                    :class="{ 'input-error': fieldErrors.username }"
+                    name="username"
+                    autocomplete="username"
+                  />
+                </div>
+                <span v-if="fieldErrors.username" class="field-error">{{ fieldErrors.username }}</span>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">密码</label>
+                <div class="input-wrapper">
+                  <div class="input-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                      <circle cx="12" cy="16" r="1"></circle>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                    </svg>
+                  </div>
+                  <input
+                    v-model="form.password"
+                    type="password"
+                    placeholder="请输入密码"
+                    required
+                    class="form-input"
+                    :class="{ 'input-error': fieldErrors.password }"
+                    name="password"
+                    autocomplete="current-password"
+                  />
+                </div>
+                <span v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</span>
+              </div>
+
+              <button
+                type="submit"
+                :disabled="loading"
+                class="login-btn"
+              >
+                <span v-if="!loading">登录</span>
+                <span v-else class="loading-content">
+                  <div class="loading-spinner"></div>
+                  登录中...
+                </span>
+              </button>
+            </form>
+
+            <!-- 底部链接 -->
+            <div class="form-footer">
+              <span class="footer-text">还没有账号？</span>
+              <router-link to="/register" class="footer-link">立即注册</router-link>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { authAPI } from '@/api'
 import { useUserStore } from '@/store/user'
+import { normalizeApiError } from '@/api'
+import AppLayout from '@/components/AppLayout.vue'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 const errorMessage = ref('')
 const successMessage = ref('')
+
 const fieldErrors = reactive({
   username: '',
   password: ''
@@ -221,9 +227,7 @@ const handleLogin = async () => {
   loading.value = true
   
   try {
-    console.log('开始登录...', form)
     const response = await authAPI.login(form)
-    console.log('登录响应:', response)
     
     const res = response.data
     
@@ -239,7 +243,12 @@ const handleLogin = async () => {
       setTimeout(() => {
         // 成功后清理草稿
         try { sessionStorage.removeItem(DRAFT_KEY) } catch {}
-        router.push('/home')
+        const redirect = typeof route.query?.redirect === 'string' ? route.query.redirect : ''
+        if (redirect && redirect.startsWith('/') && redirect !== '/login' && redirect !== '/register') {
+          router.replace(redirect)
+        } else {
+          router.replace('/home')
+        }
       }, 1000)
     } else {
       errorMessage.value = res.message || '登录失败，请重试'
@@ -248,38 +257,23 @@ const handleLogin = async () => {
     console.error('登录失败:', error)
     console.error('错误详情:', error.response)
     
-    // 提取错误消息
-    let message = '登录失败，请检查网络连接'
-    
-    if (error.response) {
-      const data = error.response.data
-      
-      // 处理不同的错误响应格式
-      if (typeof data === 'string') {
-        message = data
-      } else if (data && data.detail) {
-        message = data.detail
-      } else if (data && data.message) {
-        message = data.message
+    const norm = normalizeApiError(error)
+
+    // 根据状态码和错误信息设置字段错误
+    if (norm.status === 401) {
+      if (norm.message.includes('用户名不存在')) {
+        fieldErrors.username = '用户名不存在'
+        errorMessage.value = '用户名不存在，请先注册'
+        return
       }
-      
-      // 根据状态码和错误信息设置字段错误
-      if (error.response.status === 401) {
-        if (message.includes('用户名不存在')) {
-          fieldErrors.username = '用户名不存在'
-          message = '用户名不存在，请先注册'
-        } else if (message.includes('密码错误')) {
-          fieldErrors.password = '密码错误'
-          message = '密码错误，请重新输入'
-        }
-      } else if (error.response.status === 500) {
-        message = '服务器错误，请稍后再试'
+      if (norm.message.includes('密码错误')) {
+        fieldErrors.password = '密码错误'
+        errorMessage.value = '密码错误，请重新输入'
+        return
       }
-    } else if (error.message) {
-      message = error.message
     }
-    
-    errorMessage.value = message
+
+    errorMessage.value = norm.message
   } finally {
     loading.value = false
   }

@@ -322,6 +322,8 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { contestAPI } from '@/api'
+import { ElMessage } from 'element-plus'
+import { showApiError } from '@/api'
 
 const props = defineProps({
   visible: { type: Boolean, default: false },
@@ -557,7 +559,7 @@ const handleDuplicateAction = async () => {
         emit('close')
       } else throw new Error(res.data?.message || '保存失败')
     } catch (e) {
-      alert('保存失败: ' + (e.response?.data?.message || e.message))
+      showApiError(e, { prefix: '保存失败' })
       merging.value = false
     }
     return
@@ -575,9 +577,9 @@ const handleDuplicateAction = async () => {
       } else throw new Error(res.data?.message || '更新失败')
     } catch (e) {
       if (e.response?.status === 401) {
-        alert('登录已过期，请重新登录后再试')
+        showApiError(e)
       } else {
-        alert('更新失败: ' + (e.response?.data?.message || e.message))
+        showApiError(e, { prefix: '更新失败' })
       }
       merging.value = false
     }
@@ -595,9 +597,9 @@ const handleDuplicateAction = async () => {
       } else throw new Error(res.data?.message || '合并失败')
     } catch (e) {
       if (e.response?.status === 401) {
-        alert('登录已过期，请重新登录后再试')
+        showApiError(e)
       } else {
-        alert('合并失败: ' + (e.response?.data?.message || e.message))
+        showApiError(e, { prefix: '合并失败' })
       }
     } finally {
       merging.value = false
@@ -618,9 +620,9 @@ const confirmMerge = async () => {
     } else throw new Error(res.data?.message || '保存失败')
   } catch (e) {
     if (e.response?.status === 401) {
-      alert('登录已过期，请重新登录后再试')
+      showApiError(e)
     } else {
-      alert('保存失败: ' + (e.response?.data?.message || e.message))
+      showApiError(e, { prefix: '保存失败' })
     }
     confirming.value = false
   }
@@ -642,15 +644,7 @@ const doSave = async () => {
       emit('close')
     } else throw new Error(res.data?.message || '保存失败')
   } catch (e) {
-    if (e.response?.status === 422) {
-      const detail = e.response?.data?.detail
-      if (Array.isArray(detail)) {
-        alert('参数校验错误:\n' + detail.map(d => d.msg).join('\n'))
-        saving.value = false
-        return
-      }
-    }
-    alert('保存失败: ' + (e.response?.data?.message || e.message))
+    showApiError(e, { prefix: '保存失败' })
     saving.value = false
   }
 }

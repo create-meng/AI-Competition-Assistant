@@ -1,10 +1,11 @@
 <template>
-  <div class="register-container geometric-bg">
-    <div class="register-box card-modern">
-      <h1 class="title text-gradient">创建账号</h1>
-      <p class="subtitle">加入AI竞赛助手平台</p>
-      
-      <form @submit.prevent="handleRegister" class="register-form" autocomplete="on">
+  <AppLayout :showHeader="false" :container="false" :padded="false">
+    <div class="register-container geometric-bg">
+      <div class="register-box card-modern">
+        <h1 class="title text-gradient">创建账号</h1>
+        <p class="subtitle">加入AI竞赛助手平台</p>
+        
+        <form @submit.prevent="handleRegister" class="register-form" autocomplete="on">
         <div class="form-row">
           <div class="form-group">
             <label>用户名 <span class="required">*</span></label>
@@ -115,12 +116,13 @@
         </button>
       </form>
       
-      <div class="footer">
-        <span>已有账号？</span>
-        <router-link to="/login" class="modern-link">立即登录</router-link>
+        <div class="footer">
+          <span>已有账号？</span>
+          <router-link to="/login" class="modern-link">立即登录</router-link>
+        </div>
       </div>
     </div>
-  </div>
+  </AppLayout>
 </template>
 
 <script setup>
@@ -128,6 +130,8 @@ import { ref, reactive, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { authAPI } from '@/api'
+import { showApiError } from '@/api'
+import AppLayout from '@/components/AppLayout.vue'
 
 const router = useRouter()
 const loading = ref(false)
@@ -209,19 +213,15 @@ const handleRegister = async () => {
     const data = {
       username: form.username,
       password: form.password,
-      email: form.email || null,
       role: form.role,
-      school: form.school || null,
       real_name: form.real_name || null
     }
     
-    console.log('开始注册...', data)
     const response = await authAPI.register(data)
-    console.log('注册响应:', response)
     
     const res = response.data
     
-    if (res.status === 'success') {
+    if (res.status === 'success' && res.data) {
       ElMessage.success({
         message: '注册成功！请登录',
         duration: 2000,
@@ -244,29 +244,8 @@ const handleRegister = async () => {
   } catch (error) {
     console.error('注册失败:', error)
     console.error('错误详情:', error.response)
-    
-    // 提取错误消息
-    let errorMessage = '注册失败，请检查网络连接'
-    
-    if (error.response) {
-      const data = error.response.data
-      
-      if (typeof data === 'string') {
-        errorMessage = data
-      } else if (data && data.detail) {
-        errorMessage = data.detail
-      } else if (data && data.message) {
-        errorMessage = data.message
-      }
-    } else if (error.message) {
-      errorMessage = error.message
-    }
-    
-    ElMessage.error({
-      message: errorMessage,
-      duration: 6000,
-      showClose: true
-    })
+
+    showApiError(error, { prefix: '注册失败' })
   } finally {
     loading.value = false
   }

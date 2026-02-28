@@ -1,16 +1,14 @@
 <template>
-  <div class="extract-container">
-    <div class="page-header">
-        <div class="header-content">
-          <h1>🤖 AI智能提取</h1>
-        <p class="subtitle">使用AI自动提取竞赛信息，支持网址、文件和文本</p>
-        <button class="btn-secondary" @click="$router.push('/home')">
-          <span class="icon">←</span>
-          返回首页
-        </button>
-        </div>
-    </div>
-    
+  <AppLayout
+    title="AI智能提取"
+    subtitle="使用AI自动提取竞赛信息，支持网址、文件和文本"
+    :showBack="true"
+    backText="返回首页"
+    backTo="/home"
+  >
+    <template #right>
+      <HeaderUserInfo />
+    </template>
     <div class="main-content">
       <!-- 单列布局 -->
       <div class="single-column">
@@ -85,12 +83,12 @@
               <label class="model-label">选择模型:</label>
               <select 
                 v-model="selectedModels[provider.type]"
-                class="model-select"
+                class="ui-input ui-select"
                 @change="onModelChange(provider.type, $event)"
               >
                 <option 
                   v-for="model in provider.available_models" 
-                  :key="model"
+                  :key="model" 
                   :value="model"
                 >
                   {{ model }} {{ getModelCapabilitiesText(provider.type, model) }}
@@ -116,7 +114,7 @@
           <h2>2. 输入内容（可多选，自动合并）</h2>
           <button 
             @click="clearAllInputs"
-            class="btn-clear"
+            class="ui-btn ui-btn-secondary ui-btn-sm"
             :disabled="!hasAnyInput"
             title="清空所有输入内容"
           >
@@ -132,7 +130,7 @@
               v-model="urlInput"
               type="url"
               placeholder="https://example.com/contest"
-              class="url-input"
+              class="ui-input"
             />
             <div v-if="!supportsCapability('web_reading')" class="warning-message">
               ⚠️ {{ selectedProviderInfo?.name }} 不支持直接阅读网页，系统会先抓取网页内容后提交给AI分析
@@ -170,7 +168,7 @@
               v-model="textInput"
               placeholder="可粘贴补充说明、通知片段等..."
               rows="10"
-              class="text-input"
+              class="ui-textarea"
             ></textarea>
           </div>
         </div>
@@ -183,7 +181,7 @@
               <button 
                 @click="startExtraction"
                 :disabled="!canStartExtraction || extracting"
-                class="btn-primary btn-extract"
+                class="ui-btn ui-btn-primary ui-btn-lg ui-btn-block"
               >
                 <span v-if="extracting">
                   <span class="spinner"></span>
@@ -197,7 +195,7 @@
               <button 
                 v-if="extracting"
                 @click="cancelExtraction"
-                class="btn-danger btn-cancel"
+                class="ui-btn ui-btn-danger ui-btn-lg"
               >
                 <span class="icon">⏹</span>
                 终止任务
@@ -232,14 +230,14 @@
                     <button 
                       v-if="extractedContent.url"
                       @click="showExtractedContent('url')"
-                      class="btn-view-detail"
+                      class="ui-btn ui-btn-secondary ui-btn-sm"
                     >
                       📄 查看URL解析内容 ({{ Math.round(extractedContent.url.length / 1000) }}k字符)
                     </button>
                     <button 
                       v-if="extractedContent.file"
                       @click="showExtractedContent('file')"
-                      class="btn-view-detail"
+                      class="ui-btn ui-btn-secondary ui-btn-sm"
                     >
                       📄 查看文件解析内容 ({{ Math.round(extractedContent.file.length / 1000) }}k字符)
                     </button>
@@ -281,7 +279,7 @@
                   <h4>原始响应：</h4>
                   <div class="raw-response-container">
                     <pre class="raw-response-content">{{ extractionResult.data.raw_response }}</pre>
-                    <button @click="copyRawResponse" class="btn-copy">复制</button>
+                    <button @click="copyRawResponse" class="ui-btn ui-btn-secondary ui-btn-sm">复制</button>
                   </div>
                 </div>
                 <div class="error-suggestions">
@@ -296,10 +294,10 @@
                   </ul>
                 </div>
                 <div class="error-actions">
-                  <button @click="viewRawResponse" class="btn-debug" v-if="extractionResult.data?.raw_response">
+                  <button @click="viewRawResponse" class="ui-btn ui-btn-ghost ui-btn-sm" v-if="extractionResult.data?.raw_response">
                     <span class="icon">🔍</span> 查看完整原始响应
                   </button>
-                  <button @click="extractionResult = null" class="btn-secondary">重试</button>
+                  <button @click="extractionResult = null" class="ui-btn ui-btn-secondary ui-btn-sm">重试</button>
                 </div>
               </div>
             </div>
@@ -460,11 +458,11 @@
 
               <!-- 操作按钮 -->
               <div class="result-actions">
-                <button @click="openSaveDialog" class="btn-primary">保存到竞赛</button>
-                <button @click="viewRawResponse" class="btn-debug" title="查看AI返回的原始数据，便于调试">
+                <button @click="openSaveDialog" class="ui-btn ui-btn-primary">保存到竞赛</button>
+                <button @click="viewRawResponse" class="ui-btn ui-btn-ghost" title="查看AI返回的原始数据，便于调试">
                   <span class="icon">🔍</span> 查看原始响应
                 </button>
-                <button @click="extractionResult = null" class="btn-secondary">重新提取</button>
+                <button @click="extractionResult = null" class="ui-btn ui-btn-secondary">重新提取</button>
               </div>
             </div>
           </div>
@@ -516,13 +514,13 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="copyRawResponse" class="btn-primary">
+          <button @click="copyRawResponse" class="ui-btn ui-btn-primary">
             <span class="icon">📋</span> 复制到剪贴板
           </button>
-          <button @click="downloadRawResponse" class="btn-secondary">
+          <button @click="downloadRawResponse" class="ui-btn ui-btn-secondary">
             <span class="icon">💾</span> 下载为文件
           </button>
-          <button @click="showRawResponse = false" class="btn-secondary">关闭</button>
+          <button @click="showRawResponse = false" class="ui-btn ui-btn-secondary">关闭</button>
         </div>
       </div>
     </div>
@@ -538,7 +536,7 @@
           <pre class="extracted-content-view">{{ currentViewContent.content }}</pre>
         </div>
         <div class="modal-footer">
-          <button @click="showExtractedContentModal = false" class="btn-secondary">关闭</button>
+          <button @click="showExtractedContentModal = false" class="ui-btn ui-btn-secondary">关闭</button>
         </div>
       </div>
     </div>
@@ -564,8 +562,8 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button @click="goToLogin" class="btn-primary">立即登录</button>
-          <button @click="showLoginPrompt = false" class="btn-secondary">稍后再说</button>
+          <button @click="goToLogin" class="ui-btn ui-btn-primary">立即登录</button>
+          <button @click="showLoginPrompt = false" class="ui-btn ui-btn-secondary">稍后再说</button>
         </div>
       </div>
     </div>
@@ -576,7 +574,7 @@
       :initial-data="saveDialogInitialData"
       @success="onSaveSuccess"
     />
-  </div>
+  </AppLayout>
 </template>
 
 <script setup>
@@ -585,6 +583,8 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { aiAPI } from '@/api'
 import SaveContestDialog from '@/components/SaveContestDialog.vue'
+import AppLayout from '@/components/AppLayout.vue'
+import HeaderUserInfo from '@/components/HeaderUserInfo.vue'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -1381,39 +1381,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.extract-container {
-  min-height: 100vh;
-  background: var(--bg-secondary);
-}
-
-.page-header {
-  background: var(--bg-primary);
-  padding: 40px 20px;
-  text-align: center;
-  box-shadow: var(--shadow-md);
-  border-bottom: 1px solid var(--border-color);
-}
-
-.header-content h1 {
-  margin: 0 0 10px 0;
-  font-size: 36px;
-  font-weight: 700;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-.subtitle {
-  color: var(--text-secondary);
-  font-size: 16px;
-  margin-bottom: 20px;
-}
-
 .main-content {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 40px 20px;
+  padding: 0;
 }
 
 /* 左右分栏布局 */
@@ -1887,28 +1856,6 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
-.model-select {
-  width: 100%;
-  padding: 8px 12px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.model-select:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.model-select:hover {
-  border-color: var(--primary-color);
-}
-
 /* 性能信息 */
 .performance-info {
   color: var(--text-tertiary);
@@ -1983,36 +1930,6 @@ onMounted(() => {
   font-weight: 600;
   font-size: 15px;
   margin-bottom: 8px;
-}
-
-.url-input,
-.text-input {
-  width: 100%;
-  padding: 12px 16px;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: 15px;
-  font-family: inherit;
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  transition: all 0.3s ease;
-}
-
-.url-input:focus,
-.text-input:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
-}
-
-.url-input::placeholder,
-.text-input::placeholder {
-  color: var(--text-tertiary);
-}
-
-.text-input {
-  resize: vertical;
-  min-height: 120px;
 }
 
 /* 文件上传 */
@@ -2116,80 +2033,6 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* 按钮样式 */
-.btn-primary,
-.btn-secondary {
-  padding: 12px 24px;
-  border: none;
-  border-radius: var(--radius-md);
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-primary {
-  background: var(--gradient-primary);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-.btn-primary:disabled {
-  background: var(--bg-tertiary);
-  color: var(--text-tertiary);
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.btn-secondary {
-  background: var(--bg-primary);
-  color: var(--text-primary);
-  border: 2px solid var(--border-color);
-}
-
-.btn-secondary:hover {
-  background: var(--bg-tertiary);
-  border-color: var(--primary-color);
-  color: var(--primary-color);
-}
-
-.btn-extract {
-  padding: 16px 32px;
-  font-size: 18px;
-}
-
-.btn-cancel {
-  padding: 16px 24px;
-  font-size: 16px;
-}
-
-.btn-danger {
-  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.btn-danger:hover {
-  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
-}
-
 .action-section {
   display: flex;
   align-items: center;
@@ -2209,40 +2052,6 @@ onMounted(() => {
 
 .section-header h2 {
   margin: 0;
-}
-
-.btn-clear {
-  padding: 8px 16px;
-  background: var(--bg-primary);
-  color: var(--text-secondary);
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-md);
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.btn-clear:hover:not(:disabled) {
-  background: var(--danger-color);
-  color: white;
-  border-color: var(--danger-color);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-.btn-clear:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.btn-clear .icon {
-  font-size: 16px;
 }
 
 /* 结果展示 */

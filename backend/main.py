@@ -2,8 +2,10 @@
 AI 竞赛助手 - FastAPI 主入口
 """
 import time
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 
 from database import init_db, close_db
@@ -39,11 +41,58 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    """统一 HTTPException 错误响应格式"""
+    message = exc.detail
+    # 兼容某些地方 detail 可能是 dict 的情况
+    if isinstance(message, dict):
+        message = message.get("message") or message.get("detail") or str(message)
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "status": "error",
+            "code": exc.status_code,
+            "message": message,
+            "data": None,
+        },
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def request_validation_exception_handler(request: Request, exc: RequestValidationError):
+    """统一 422 参数校验错误响应格式"""
+    return JSONResponse(
+        status_code=422,
+        content={
+            "status": "error",
+            "code": 422,
+            "message": "请求参数校验失败",
+            "data": {"errors": exc.errors()},
+        },
+    )
+
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    """统一未捕获异常响应格式（避免直接返回框架默认HTML）"""
+    logger.error(f"未处理异常: {exc}", exc_info=True)
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "error",
+            "code": 500,
+            "message": "服务器内部错误",
+            "data": None,
+        },
+    )
+
 # CORS配置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173"],  # 前端地址
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

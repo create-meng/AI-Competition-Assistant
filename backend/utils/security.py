@@ -20,6 +20,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
 
 # HTTP Bearer认证
 security = HTTPBearer()
+optional_security = HTTPBearer(auto_error=False)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -93,6 +94,29 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
         "username": username,
         "user_id": user_id,
         "role": role
+    }
+
+
+async def get_current_user_optional(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(optional_security),
+):
+    """可选获取当前用户（未登录返回 None）"""
+    if not credentials or not getattr(credentials, "credentials", None):
+        return None
+    token = credentials.credentials
+    payload = decode_token(token)
+
+    username: str = payload.get("sub")
+    user_id: str = payload.get("user_id")
+    role: str = payload.get("role")
+
+    if username is None or user_id is None:
+        return None
+
+    return {
+        "username": username,
+        "user_id": user_id,
+        "role": role,
     }
 
 

@@ -288,9 +288,22 @@ class SQLiteCollection:
                 if key == "_id":
                     conditions.append("id = ?")
                     values.append(int(value))
-                else:
-                    conditions.append(f"{key} = ?")
-                    values.append(json.dumps(value) if isinstance(value, (dict, list)) else value)
+                    continue
+
+                if isinstance(value, dict):
+                    if "$gte" in value:
+                        conditions.append(f"{key} >= ?")
+                        values.append(value["$gte"])
+                    if "$lte" in value:
+                        conditions.append(f"{key} <= ?")
+                        values.append(value["$lte"])
+                    if "$like" in value:
+                        conditions.append(f"{key} LIKE ?")
+                        values.append(f"%{value['$like']}%")
+                    continue
+
+                conditions.append(f"{key} = ?")
+                values.append(json.dumps(value) if isinstance(value, (dict, list)) else value)
             
             if search and search_field:
                 conditions.append(f"{search_field} LIKE ?")
@@ -356,9 +369,22 @@ class AsyncCursor:
                 if key == "_id":
                     conditions.append("id = ?")
                     values.append(int(value))
-                else:
-                    conditions.append(f"{key} = ?")
-                    values.append(json.dumps(value) if isinstance(value, (dict, list)) else value)
+                    continue
+
+                if isinstance(value, dict):
+                    if "$gte" in value:
+                        conditions.append(f"{key} >= ?")
+                        values.append(value["$gte"])
+                    if "$lte" in value:
+                        conditions.append(f"{key} <= ?")
+                        values.append(value["$lte"])
+                    if "$like" in value:
+                        conditions.append(f"{key} LIKE ?")
+                        values.append(f"%{value['$like']}%")
+                    continue
+
+                conditions.append(f"{key} = ?")
+                values.append(json.dumps(value) if isinstance(value, (dict, list)) else value)
             
             if self._search and self._search_field:
                 conditions.append(f"{self._search_field} LIKE ?")

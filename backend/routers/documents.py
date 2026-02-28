@@ -2,10 +2,8 @@
 文档上传和管理API
 """
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File
-from typing import Optional
 from datetime import datetime
 from pathlib import Path
-import os
 import hashlib
 import secrets
 # from bson import ObjectId  # MongoDB 专用，SQLite 不需要
@@ -21,6 +19,7 @@ MAX_FILE_SIZE = 20 * 1024 * 1024  # 20MB
 ALLOWED_EXTENSIONS = {'.pdf', '.txt', '.html', '.docx', '.doc'}
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
+CHUNK_SIZE = 1024 * 1024  # 1MB
 
 
 def validate_file(file: UploadFile) -> bool:
@@ -38,7 +37,7 @@ async def save_upload_file(file: UploadFile) -> dict:
     """保存上传文件"""
     database = get_database()
     if database is None:
-        raise HTTPException(status_code=500, detail="数据库连接失败，请稍后重试")
+        error("数据库未就绪，请稍后重试", code=503)
     
     # 生成文件名
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -48,20 +47,40 @@ async def save_upload_file(file: UploadFile) -> dict:
     
     # 保存文件
     file_path = UPLOAD_DIR / filename
-    
-    # 读取文件内容
-    content = await file.read()
-    await file.seek(0)  # 重置文件指针
-    
-    # 可靠的文件大小校验
-    if len(content) > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="文件大小超过限制（最大20MB）")
-    
-    # 写入文件
-    file_path.write_bytes(content)
-    
-    # 计算哈希
-    file_hash = hashlib.sha256(content).hexdigest()
+
+    total_size = 0
+    hasher = hashlib.sha256()
+    try:
+        with open(file_path, "wb") as f:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                total_size += len(chunk)
+                if total_size > MAX_FILE_SIZE:
+                    try:
+                        f.close()
+                    except Exception:
+                        pass
+                    try:
+                        if file_path.exists():
+                            file_path.unlink()
+                    except Exception:
+                        pass
+                    raise HTTPException(status_code=400, detail="文件大小超过限制（最大20MB）")
+                hasher.update(chunk)
+                f.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        try:
+            if file_path.exists():
+                file_path.unlink()
+        except Exception:
+            pass
+        error(f"保存文件失败: {str(e)}", code=500)
+
+    file_hash = hasher.hexdigest()
     
     # 保存元数据到数据库
     doc_meta = {
@@ -69,13 +88,22 @@ async def save_upload_file(file: UploadFile) -> dict:
         "saved_filename": filename,
         "file_path": str(file_path),
         "file_type": file.content_type,
-        "file_size": len(content),
+        "file_size": total_size,
         "file_hash": file_hash,
         "uploaded_at": datetime.utcnow().isoformat(),
         "parse_status": "pending"
     }
-    
-    result = await database.documents.insert_one(doc_meta)
+
+    try:
+        result = await database.documents.insert_one(doc_meta)
+    except Exception as e:
+        try:
+            if file_path.exists():
+                file_path.unlink()
+        except Exception:
+            pass
+        error(f"保存文档元数据失败: {str(e)}", code=500)
+
     doc_meta["_id"] = str(result.inserted_id)
     
     return doc_meta
@@ -102,7 +130,7 @@ async def upload_document(
     except HTTPException:
         raise
     except Exception as e:
-        return error(f"文件上传失败: {str(e)}", code=500)
+        error(f"文件上传失败: {str(e)}", code=500)
 
 
 @router.post("/upload-test")
@@ -120,7 +148,7 @@ async def upload_document_test(file: UploadFile = File(...)):
     except HTTPException:
         raise
     except Exception as e:
-        return error(f"文件上传失败: {str(e)}", code=500)
+        error(f"文件上传失败: {str(e)}", code=500)
 
 
 @router.get("/{document_id}")
@@ -128,10 +156,18 @@ async def get_document(document_id: str):
     """获取文档信息"""
     try:
         database = get_database()
-        doc = await database.documents.find_one({"_id": int(document_id)})
+        if database is None:
+            error("数据库未就绪，请稍后重试", code=503)
+
+        try:
+            doc_id = int(document_id)
+        except Exception:
+            error("无效的文档ID", code=400)
+
+        doc = await database.documents.find_one({"_id": doc_id})
         
         if not doc:
-            return error("文档不存在", code=404)
+            error("文档不存在", code=404)
         
         # 转换ID为字符串
         doc["_id"] = str(doc["_id"])
@@ -139,7 +175,7 @@ async def get_document(document_id: str):
         return success(doc)
         
     except Exception as e:
-        return error(f"获取文档失败: {str(e)}", code=500)
+        error(f"获取文档失败: {str(e)}", code=500)
 
 
 @router.delete("/{document_id}")
@@ -147,10 +183,18 @@ async def delete_document(document_id: str):
     """删除文档"""
     try:
         database = get_database()
-        doc = await database.documents.find_one({"_id": int(document_id)})
+        if database is None:
+            error("数据库未就绪，请稍后重试", code=503)
+
+        try:
+            doc_id = int(document_id)
+        except Exception:
+            error("无效的文档ID", code=400)
+
+        doc = await database.documents.find_one({"_id": doc_id})
         
         if not doc:
-            return error("文档不存在", code=404)
+            error("文档不存在", code=404)
         
         # 删除文件
         file_path = Path(doc.get("file_path", ""))
@@ -158,9 +202,9 @@ async def delete_document(document_id: str):
             file_path.unlink()
         
         # 删除数据库记录
-        await database.documents.delete_one({"_id": int(document_id)})
+        await database.documents.delete_one({"_id": doc_id})
         
         return success(None, message="文档删除成功")
         
     except Exception as e:
-        return error(f"删除文档失败: {str(e)}", code=500)
+        error(f"删除文档失败: {str(e)}", code=500)
